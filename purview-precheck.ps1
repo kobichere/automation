@@ -41,7 +41,7 @@ function Try-Call {
     & $Op
   } catch {
     $msg = $_.Exception.Message
-    Write-Host "❌ $StepName failed: $msg" -ForegroundColor Red
+    Write-Host " $StepName failed: $msg" -ForegroundColor Red
 
     if ($msg -match "401|Unauthorized") {
       Write-Host "Likely causes: wrong tenant/app creds OR SPN not allowed to access Purview APIs." -ForegroundColor Yellow
@@ -71,20 +71,20 @@ Write-Host "Collections endpoint: $listCollectionsUrl" -ForegroundColor Cyan
 Write-Host "Search endpoint: $searchUrl" -ForegroundColor Cyan
 
 $token = Try-Call -StepName "Get OAuth token" -Op { Get-Token }
-Write-Host "✅ Token acquired (length=$($token.Length))" -ForegroundColor Green
+Write-Host " Token acquired (length=$($token.Length))" -ForegroundColor Green
 
 $headers = @{
   Authorization  = "Bearer $token"
   "Content-Type" = "application/json"
 }
 
-# 1) List collections (account data plane)
+# 1) List collections
 Try-Call -StepName "List collections" -Op {
   $collections = Invoke-RestMethod -Method Get -Uri $listCollectionsUrl -Headers @{ Authorization = "Bearer $token" }
   if (-not $collections.value) {
     Write-Host "No collections returned (or API returned empty value[])." -ForegroundColor Yellow
   } else {
-    Write-Host "✅ Collections returned: $($collections.value.Count)" -ForegroundColor Green
+    Write-Host " Collections returned: $($collections.value.Count)" -ForegroundColor Green
     $collections.value | ForEach-Object {
       # name + friendlyName are in the API response schema
       Write-Host ("- name: {0} | friendlyName: {1}" -f $_.name, $_.friendlyName)
@@ -92,7 +92,7 @@ Try-Call -StepName "List collections" -Op {
   }
 }
 
-# 2) Discovery query quick test (basic). 
+# 2) Discovery query quick test. 
 Try-Call -StepName "Discovery query test" -Op {
   $filter = $null
   if ($TestCollectionName) {
@@ -111,13 +111,13 @@ Try-Call -StepName "Discovery query test" -Op {
 
   $count = $result.'@search.count'
   $returned = @($result.value).Count
-  Write-Host "✅ Discovery query OK. @search.count=$count returned=$returned" -ForegroundColor Green
+  Write-Host " Discovery query OK. @search.count=$count returned=$returned" -ForegroundColor Green
 
   if ($returned -gt 0) {
     Write-Host "Sample IDs:" -ForegroundColor Cyan
     @($result.value) | Select-Object -First 3 | ForEach-Object { Write-Host ("- " + $_.id) }
   } else {
-    Write-Host "⚠️ Search returned 0. If collections list succeeded, likely wrong collectionId OR no assets in that scope OR missing permissions on that collection." -ForegroundColor Yellow
+    Write-Host " Search returned 0. If collections list succeeded, likely wrong collectionId OR no assets in that scope OR missing permissions on that collection." -ForegroundColor Yellow
   }
 }
 

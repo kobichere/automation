@@ -26,7 +26,7 @@ $ErrorActionPreference = "Stop"
 
 $base = "https://$PurviewAccountName.purview.azure.com"
 
-# ✅ Microsoft-documented Data Map bulk delete endpoint expects repeated guid= parameters [1](https://learn.microsoft.com/en-us/azure/update-manager/tutorial-webhooks-using-runbooks)
+# Microsoft-documented Data Map bulk delete endpoint expects repeated guid= parameters [1](https://learn.microsoft.com/en-us/azure/update-manager/tutorial-webhooks-using-runbooks)
 $bulkDeleteBase = "$base/datamap/api/atlas/v2/entity/bulk?api-version=2023-09-01"
 
 $CsvPath        = Join-Path (Get-Location) $CsvFile
@@ -82,7 +82,7 @@ function Show-ErrorDetails($err) {
   }
 }
 
-# -------- Validate input --------
+# ---- Validate input ----
 if (-not (Test-Path $CsvPath)) { throw "CSV not found: $CsvPath" }
 
 Copy-Item -Path $CsvPath -Destination $BackupCsvPath -Force
@@ -107,7 +107,7 @@ Write-Host ("Loaded GUIDs: {0}" -f $guids.Count) -ForegroundColor Cyan
 
 @() | Export-Csv -Path $FailedGuidsPath -NoTypeInformation -Force
 
-# -------- Optional: single GUID test (strongly recommended) --------
+# ---- single GUID test ----
 if ($TestSingle) {
   $one = $guids | Select-Object -First 1
   if (-not $one) { throw "No GUIDs found to test." }
@@ -124,14 +124,14 @@ if ($TestSingle) {
   return
 }
 
-# -------- Delete loop --------
+# ---- Delete loop ----
 $printed = $false
 
 while ($guids.Count -gt 0) {
   $batch = $guids | Select-Object -First $BatchSize
   if (-not $batch -or $batch.Count -eq 0) { break }
 
-  # ✅ Build URL with repeated guid= params EXACTLY as required [1](https://learn.microsoft.com/en-us/azure/update-manager/tutorial-webhooks-using-runbooks)
+  # Build URL with repeated guid= params EXACTLY as required [1](https://learn.microsoft.com/en-us/azure/update-manager/tutorial-webhooks-using-runbooks)
   $guidParams = ($batch | ForEach-Object { "guid=$([System.Uri]::EscapeDataString($_))" }) -join "&"
   $url = "$bulkDeleteBase&$guidParams"
 
